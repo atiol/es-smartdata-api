@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nest;
+using SmartES.Application.Constants;
 using SmartES.Application.Contracts;
 using SmartES.Application.Helpers;
 using SmartES.Application.Models.Mgmt;
@@ -25,17 +26,18 @@ namespace SmartES.Infrastructure.IoC.Extensions
             //var pool = new SingleNodeConnectionPool(new Uri(uri));
             var settings = new ConnectionSettings(new Uri(uri))
                 .BasicAuthentication(username, password)
-                .DefaultMappingFor<MgmtSearchDocument>(m => m.IdProperty(x => x.MgmtId))
-                .DefaultMappingFor<PropertySearchDocument>(p => p.IdProperty(x => x.PropertyId));
+                .DisableDirectStreaming()
+                .DefaultMappingFor<MgmtDetailsModel>(m => m
+                    .IndexName(ElasticsearchConstants.MgmtIndex)
+                    .IdProperty(x => x.MgmtId)
+                        .PropertyName(n => n.MgmtId, "id"))
+                .DefaultMappingFor<PropertyDetailsModel>(p => p
+                    .IndexName(ElasticsearchConstants.PropertyIndex)
+                    .IdProperty(x => x.PropertyId)
+                        .PropertyName(n => n.PropertyId, "id"));
 
             var esClient = new ElasticClient(settings);
-            services.AddSingleton(settings);
-            services.AddScoped(s => 
-            {
-                var connectionSettings = s.GetRequiredService<ConnectionSettings>();
-                var client = new ElasticClient(connectionSettings);
-                return client;
-            });
+            services.AddSingleton(esClient);
         }
 
         public static void RegisterServices(this IServiceCollection services, IConfiguration configuration)
@@ -48,7 +50,7 @@ namespace SmartES.Infrastructure.IoC.Extensions
             });
 
             services.AddElasticsearch(configuration);
-            services.AddScoped<PropertiesHelper>();
+            services.AddScoped<PropertysHelper>();
             services.AddScoped<MgmtHelper>();
             services.AddScoped<ISearchService, SearchService>();
         }

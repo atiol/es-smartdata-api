@@ -9,19 +9,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{D1332C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{3EECEB09-CED2-45FB-BC7F-EE2A78FD5B2C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartES.Application", "SmartES.Application\SmartES.Application.csproj", "{888B556B-D20D-4E57-912A-75146960067C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartES.Application", "SmartES.Application\SmartES.Application.csproj", "{888B556B-D20D-4E57-912A-75146960067C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartES.Domain", "SmartES.Domain\SmartES.Domain.csproj", "{AEB50ADA-7E7B-41FB-8A65-8603361C713C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartES.Domain", "SmartES.Domain\SmartES.Domain.csproj", "{AEB50ADA-7E7B-41FB-8A65-8603361C713C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartES.Infrastructure.IoC", "SmartES.Infrastructure.IoC\SmartES.Infrastructure.IoC.csproj", "{262A6616-9769-470F-814A-CE1912A5EF82}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartES.Infrastructure.IoC", "SmartES.Infrastructure.IoC\SmartES.Infrastructure.IoC.csproj", "{262A6616-9769-470F-814A-CE1912A5EF82}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{9F81BE1D-1E5C-46E7-B78B-595A9FCF61B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartES.Presentation.API", "SmartES.Presentation.API\SmartES.Presentation.API.csproj", "{32152B5A-715F-42DB-9B5D-546500B797EB}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{321A9E2F-36CD-4C41-8484-536CA75EF8B0}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartES.Tests.Presentation", "SmartES.Tests.Presentation\SmartES.Tests.Presentation.csproj", "{C0451D0F-9C1A-4E50-A16F-AB4840E9B24C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartES.Presentation.API", "SmartES.Presentation.API\SmartES.Presentation.API.csproj", "{32152B5A-715F-42DB-9B5D-546500B797EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,10 +41,6 @@ Global
 		{32152B5A-715F-42DB-9B5D-546500B797EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32152B5A-715F-42DB-9B5D-546500B797EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32152B5A-715F-42DB-9B5D-546500B797EB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C0451D0F-9C1A-4E50-A16F-AB4840E9B24C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0451D0F-9C1A-4E50-A16F-AB4840E9B24C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0451D0F-9C1A-4E50-A16F-AB4840E9B24C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0451D0F-9C1A-4E50-A16F-AB4840E9B24C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,7 +50,6 @@ Global
 		{AEB50ADA-7E7B-41FB-8A65-8603361C713C} = {D1332C3F-9CC8-46C2-95AE-E3C3B130EF9E}
 		{262A6616-9769-470F-814A-CE1912A5EF82} = {3EECEB09-CED2-45FB-BC7F-EE2A78FD5B2C}
 		{32152B5A-715F-42DB-9B5D-546500B797EB} = {9F81BE1D-1E5C-46E7-B78B-595A9FCF61B6}
-		{C0451D0F-9C1A-4E50-A16F-AB4840E9B24C} = {321A9E2F-36CD-4C41-8484-536CA75EF8B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D49E9620-E695-46CC-A204-D08F5851FF18}

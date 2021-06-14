@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using SmartES.Application.Helpers;
 using SmartES.Infrastructure.IoC.Extensions;
 
 namespace SmartES.Presentation.API
 {
     public class Startup
     {
+        readonly string allowedOrigins = "allowedOrigins";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -21,6 +21,13 @@ namespace SmartES.Presentation.API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddCors(opt =>
+            {
+                opt.AddPolicy(allowedOrigins, builder => builder
+                    .WithOrigins("http://localhost:4200")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+            });
             services.RegisterServices(Configuration);
         }
 
@@ -32,9 +39,11 @@ namespace SmartES.Presentation.API
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(allowedOrigins);
 
             app.UseAuthorization();
 
