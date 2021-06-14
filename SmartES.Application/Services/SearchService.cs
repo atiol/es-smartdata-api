@@ -42,9 +42,9 @@ namespace SmartES.Application.Services
                         .Must(mu => mu
                             .Match(m => m
                                 .Field(Infer.Field<PropertyDetailsModel>(ff => ff.Market))
-                                .Query(model.Market)))) 
+                                .Query(model.Market))))
                          &&
-                    
+
                     q.MultiMatch(m => m
                         .Type(TextQueryType.PhrasePrefix)
                         .Fields(f => f
@@ -58,7 +58,7 @@ namespace SmartES.Application.Services
                     (q.MatchPhrase(m => m
                             .Field(Infer.Field<MgmtDetailsModel>(pf => pf.Name, 1.2))
                         .Query(model.Query)) &&
-                        q.Term("_index", ElasticsearchConstants.MgmtIndex)) && 
+                        q.Term("_index", ElasticsearchConstants.MgmtIndex)) &&
                     q.Bool(b => b
                         .Must(mu => mu
                             .Match(m => m
@@ -78,10 +78,10 @@ namespace SmartES.Application.Services
                                 .Fields(f => f
                                     .Field(Infer.Field<PropertyDetailsModel>(ff => ff.Name))
                                     .Field(Infer.Field<PropertyDetailsModel>(ff => ff.FormerName)))
-                                .Query(model.Query)) 
-                        
+                                .Query(model.Query))
+
                         ||
-                            
+
                             q.MatchPhrasePrefix(pp => pp
                                 .Field(Infer.Field<MgmtDetailsModel>(f => f.Name))
                                 .Query(model.Query)
@@ -90,11 +90,11 @@ namespace SmartES.Application.Services
                     );
             }
 
-            
+
 
             return new PagedResponseModel<object>
             {
-                TotalItems = (int) response.Total,
+                TotalItems = (int)response.Total,
                 PageIndex = model.PageIndex,
                 PageSize = model.PageSize,
                 Items = response.Documents
@@ -116,9 +116,9 @@ namespace SmartES.Application.Services
                             .Fields(f => f
                                 .Field(ff => ff.Name)
                                 .Field(ff => ff.FormerName))
-                            .Operator(Operator.Or)) && 
-                            (!string.IsNullOrEmpty(market) ? 
-                                q.Bool(b => b.Filter(m => m.Term(t => t.Market, market))) : 
+                            .Operator(Operator.Or)) &&
+                            (!string.IsNullOrEmpty(market) ?
+                                q.Bool(b => b.Filter(m => m.Term(t => t.Market, market))) :
                                 q.Fuzzy(f => f.Fuzziness(Fuzziness.EditDistance(1)))))
                     );
             }
@@ -149,46 +149,8 @@ namespace SmartES.Application.Services
         {
             try
             {
-                //var response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
-                //.Index(ElasticsearchConstants.PropertyIndex)
-                //.Aggregations(a => a
-                //    .MultiTerms("markets", m => m
-                //        .CollectMode(TermsAggregationCollectMode.BreadthFirst)
-                //        .Terms(t => t
-                //            .Field(f => f.Market), t => t.Field(f => f.State))
-                //        .MinimumDocumentCount(1)
-                //        .Size(500) // Assuming current market size is less than 500
-                //        .Order(o => o
-                //            .KeyAscending()
-                //            .CountDescending()))));
-
-                var response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
-                    .Index(ElasticsearchConstants.PropertyIndex)
-                    .Size(1000)
-                    .Sort(o => o.Ascending(a => a.Market).Ascending(a => a.State))
-                    .Aggregations(a => a
-                        .Composite("markets", c => c
-                            .Sources(s => s
-                                .Terms("market", t => t.Field(f => f.Market))
-                                .Terms("state", t => t.Field(f => f.State)))))
-                    );
-
-                //var mappedResponse = response.Aggregations
-                //        .Buckets.Select<MultiTermsBucket<string>, MarketDetailsModel>(s => new MarketDetailsModel
-                //        {
-                //            Name = s.Key.ToArray()[0],
-                //            State = s.Key.ToArray()[1]
-                //        });
-
-                var markets = response.Aggregations.Composite("markets").Buckets;
-
-                var mappedResponse = markets.Select(s => new MarketDetailsModel
-                {
-                    Name = s.Key.Values.ToArray()[0].ToString(),
-                    State = s.Key.Values.ToArray()[1].ToString()
-                });
-
-                return mappedResponse;
+                var markets = await Esv713GetMarkets();
+                return markets;
             }
             catch (Exception ex)
             {
@@ -196,6 +158,61 @@ namespace SmartES.Application.Services
                 Console.WriteLine(ex);
                 return null;
             }
+        }
+
+        private async Task<IEnumerable<MarketDetailsModel>> Awsv710GetMarkets()
+        {
+            var response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
+                .Index(ElasticsearchConstants.PropertyIndex)
+                .Size(1000) // assuming market size < 1000
+                .Sort(o => o.Ascending(a => a.Market).Ascending(a => a.State))
+                .Aggregations(a => a
+                    .Composite("markets", c => c
+                        .Sources(s => s
+                            .Terms("market", t => t.Field(f => f.Market))
+                            .Terms("state", t => t.Field(f => f.State)))))
+                );
+
+
+            var markets = response
+                            .Aggregations
+                                .Composite("markets")
+                                    .Buckets.Select(s => new MarketDetailsModel
+                                    {
+                                        Name = s.Key.Values.ToArray()[0].ToString(),
+                                        State = s.Key.Values.ToArray()[1].ToString()
+                                    });
+
+            return markets;
+        }
+
+        private async Task<IEnumerable<MarketDetailsModel>> Esv713GetMarkets()
+        {
+            var response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
+                .Index(ElasticsearchConstants.PropertyIndex)
+                .Aggregations(a => a
+                    .MultiTerms("markets", m => m
+                            .CollectMode(TermsAggregationCollectMode.BreadthFirst)
+                            .Terms(t => t
+                                .Field(f => f.Market), t => t.Field(f => f.State))
+                            .MinimumDocumentCount(1)
+                            .Size(1000) // assuming market size < 1000
+                            .Order(o => o
+                                .KeyAscending()
+                                .CountDescending()))) 
+                );
+
+            var markets = response
+                    .Aggregations
+                        .MultiTerms("markets")
+                            .Buckets.Select<MultiTermsBucket<string>, MarketDetailsModel>(s =>
+                            new MarketDetailsModel
+                            {
+                                Name = s.Key.ToArray()[0],
+                                State = s.Key.ToArray()[1]
+                            });
+
+            return markets;
         }
     }
 }

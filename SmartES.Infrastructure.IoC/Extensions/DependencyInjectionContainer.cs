@@ -18,16 +18,16 @@ namespace SmartES.Infrastructure.IoC.Extensions
     {
         internal static void AddElasticsearch(this IServiceCollection services, IConfiguration configuration)
         {
-            var options = configuration.GetAWSOptions();
-            //var httpConnection = new AwsHttpConnection(options);
-            var uri = configuration["Elasticsearch:AwsUri"];
-            var username = configuration["Elasticsearch:AwsUser"];
-            var password = configuration["Elasticsearch:AwsPassword"];
+            //var options = configuration.GetAWSOptions();
+            var uri = configuration["Elasticsearch:EsUri"];
+            var username = configuration["Elasticsearch:User"];
+            var password = configuration["Elasticsearch:Password"];
             var defaultIndex = configuration["Elasticsearch:defaultIndex"];
 
-            var pool = new SingleNodeConnectionPool(new Uri(uri));
-            var config = new ConnectionSettings(pool)
+            //var pool = new SingleNodeConnectionPool(new Uri(uri));
+            var settings = new ConnectionSettings(new Uri(uri))
                 .BasicAuthentication(username, password)
+                .DefaultIndex(defaultIndex)
                 .DisableDirectStreaming()
                 .DefaultMappingFor<MgmtDetailsModel>(m => m
                     .IndexName(ElasticsearchConstants.MgmtIndex)
@@ -38,7 +38,7 @@ namespace SmartES.Infrastructure.IoC.Extensions
                     .IdProperty(x => x.PropertyId)
                         .PropertyName(n => n.PropertyId, "id"));
 
-            var esClient = new ElasticClient(config);
+            var esClient = new ElasticClient(settings);
             services.AddSingleton(esClient);
         }
 

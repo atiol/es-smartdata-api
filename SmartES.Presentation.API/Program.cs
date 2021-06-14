@@ -12,7 +12,7 @@ namespace SmartES.Presentation.API
 
             using (var scope = host.Services.CreateScope())
             {
-                //var propertiesLoader = scope.ServiceProvider.GetRequiredService<PropertiesHelper>();
+                //var propertiesLoader = scope.ServiceProvider.GetRequiredService<PropertysHelper>();
                 //var mgmtLoader = scope.ServiceProvider.GetRequiredService<MgmtHelper>();
 
                 //await propertiesLoader.RunAsync();
