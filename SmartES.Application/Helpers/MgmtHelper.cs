@@ -23,22 +23,22 @@ namespace SmartES.Application.Helpers
 
         public async Task RunAsync()
         {
-            Console.WriteLine("[SmartData] INDEXING MANAGEMENT DATA");
-            Console.WriteLine("[SmartData] -------------------------------\n");
+            Console.WriteLine("[DataUploader] INDEXING MANAGEMENT DATA");
+            Console.WriteLine("[DataUploader] -------------------------------\n");
             var index = await _client.Indices.ExistsAsync(ElasticsearchConstants.MgmtIndex);
 
             if (index.Exists)
             {
-                Console.WriteLine($"[SmartData] [{ElasticsearchConstants.MgmtIndex}] exists! Deleting existing index...");
+                Console.WriteLine($"[DataUploader] [{ElasticsearchConstants.MgmtIndex}] exists! Deleting existing index...");
                 // reindex appropriately
                 var deleteResult = await _client.Indices.DeleteAsync(ElasticsearchConstants.MgmtIndex);
                 if (deleteResult.IsValid)
                 {
-                    Console.WriteLine($"[SmartData] [{ElasticsearchConstants.MgmtIndex}] index deleted!");
+                    Console.WriteLine($"[DataUploader] [{ElasticsearchConstants.MgmtIndex}] index deleted!");
                 }
                 else
                 {
-                    Console.WriteLine($"[SmartData] Could not delete [{ElasticsearchConstants.MgmtIndex}] index!");
+                    Console.WriteLine($"[DataUploader] Could not delete [{ElasticsearchConstants.MgmtIndex}] index!");
                     Console.WriteLine(deleteResult.OriginalException.StackTrace);
                     return;
                 }
@@ -47,12 +47,12 @@ namespace SmartES.Application.Helpers
             {
                 if (index.ApiCall.HttpStatusCode != 200)
                 {
-                    Console.WriteLine($"[SmartData] Error while checking whether index exists!\n");
+                    Console.WriteLine($"[DataUploader] Error while checking whether index exists!\n");
                     Console.WriteLine(index.DebugInformation + "\n");
                 }
                 else
                 {
-                    Console.WriteLine($"[SmartData] No existing index found. Proceed to create index [{ElasticsearchConstants.MgmtIndex}]");
+                    Console.WriteLine($"[DataUploader] No existing index found. Proceed to create index [{ElasticsearchConstants.MgmtIndex}]");
                 }
             }
 
@@ -66,11 +66,11 @@ namespace SmartES.Application.Helpers
 
             if (createResult.IsValid)
             {
-                Console.WriteLine($"[SmartData] [{ElasticsearchConstants.MgmtIndex}] index created successfully!!!");
+                Console.WriteLine($"[DataUploader] [{ElasticsearchConstants.MgmtIndex}] index created successfully!!!");
             }
             else
             {
-                Console.WriteLine($"[SmartData] Error encountered while trying to create index [{ElasticsearchConstants.MgmtIndex}]!\n");
+                Console.WriteLine($"[DataUploader] Error encountered while trying to create index [{ElasticsearchConstants.MgmtIndex}]!\n");
                 Console.WriteLine(createResult.OriginalException.ToString());
                 Console.WriteLine();
                 return;
@@ -78,12 +78,12 @@ namespace SmartES.Application.Helpers
 
             var mgmtList = new List<MgmtDetailsModel>();
             var mgmtDataPath = @"D:\learning\elasticsearch\SmartES\SmartES.Presentation.API\Data\mgmt.json"; 
-            Console.WriteLine($"[SmartData] Data filepath: {mgmtDataPath}");
+            Console.WriteLine($"[DataUploader] Data filepath: {mgmtDataPath}");
             int counter = 0, dataIndex = 0;
 
             if (!File.Exists(mgmtDataPath))
             {
-                Console.WriteLine($"[SmartData] File not found at path: {mgmtDataPath}");
+                Console.WriteLine($"[DataUploader] File not found at path: {mgmtDataPath}");
                 return;
             };
 
@@ -92,7 +92,7 @@ namespace SmartES.Application.Helpers
                 using StreamReader fileData = File.OpenText(mgmtDataPath);
                 using JsonTextReader reader = new JsonTextReader(fileData);
 
-                Console.WriteLine("[SmartData] Reading file data...");
+                Console.WriteLine("[DataUploader] Reading file data...");
 
                 while (reader.Read())
                 {
@@ -107,7 +107,7 @@ namespace SmartES.Application.Helpers
 
                         if (counter == 500)
                         {
-                            Console.Write("[SmartData] #=>");
+                            Console.Write("[DataUploader] #=>");
                             counter = 0;
                         }
                     }
@@ -117,11 +117,11 @@ namespace SmartES.Application.Helpers
 
                 if (bulkResult.IsValid)
                 {
-                    Console.WriteLine($"\n[SmartData] Successfully indexed {dataIndex} files!!!\n");
+                    Console.WriteLine($"\n[DataUploader] Successfully indexed {dataIndex} files!!!\n");
                 }
                 else
                 {
-                    Console.WriteLine($"[SmartData] Error encountered while bulk indexing data!!!\n");
+                    Console.WriteLine($"[DataUploader] Error encountered while bulk indexing data!!!\n");
                 }
             }
             catch (Exception ex)
