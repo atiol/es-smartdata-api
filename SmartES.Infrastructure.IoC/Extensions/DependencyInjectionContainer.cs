@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Elasticsearch.Net;
+using Elasticsearch.Net.Aws;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nest;
@@ -16,15 +18,15 @@ namespace SmartES.Infrastructure.IoC.Extensions
     {
         internal static void AddElasticsearch(this IServiceCollection services, IConfiguration configuration)
         {
-            //var options = configuration.GetAWSOptions();
+            var options = configuration.GetAWSOptions();
             //var httpConnection = new AwsHttpConnection(options);
-            var uri = configuration["Elasticsearch:EsUri"];
-            var username = configuration["Elasticsearch:User"];
-            var password = configuration["Elasticsearch:Password"];
+            var uri = configuration["Elasticsearch:AwsUri"];
+            var username = configuration["Elasticsearch:AwsUser"];
+            var password = configuration["Elasticsearch:AwsPassword"];
             var defaultIndex = configuration["Elasticsearch:defaultIndex"];
 
-            //var pool = new SingleNodeConnectionPool(new Uri(uri));
-            var settings = new ConnectionSettings(new Uri(uri))
+            var pool = new SingleNodeConnectionPool(new Uri(uri));
+            var config = new ConnectionSettings(pool)
                 .BasicAuthentication(username, password)
                 .DisableDirectStreaming()
                 .DefaultMappingFor<MgmtDetailsModel>(m => m
@@ -36,7 +38,7 @@ namespace SmartES.Infrastructure.IoC.Extensions
                     .IdProperty(x => x.PropertyId)
                         .PropertyName(n => n.PropertyId, "id"));
 
-            var esClient = new ElasticClient(settings);
+            var esClient = new ElasticClient(config);
             services.AddSingleton(esClient);
         }
 

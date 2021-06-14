@@ -147,27 +147,55 @@ namespace SmartES.Application.Services
 
         public async Task<IEnumerable<MarketDetailsModel>> GetMarkets()
         {
-            var response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
-                .Index(ElasticsearchConstants.PropertyIndex)
-                .Aggregations(a => a
-                    .MultiTerms("markets", m => m
-                        .CollectMode(TermsAggregationCollectMode.BreadthFirst)
-                        .Terms(t => t
-                            .Field(f => f.Market), t => t.Field(f => f.State))
-                        .MinimumDocumentCount(1)
-                        .Size(500)
-                        .Order(o => o
-                            .KeyAscending()
-                            .CountDescending()))));
+            try
+            {
+                //var response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
+                //.Index(ElasticsearchConstants.PropertyIndex)
+                //.Aggregations(a => a
+                //    .MultiTerms("markets", m => m
+                //        .CollectMode(TermsAggregationCollectMode.BreadthFirst)
+                //        .Terms(t => t
+                //            .Field(f => f.Market), t => t.Field(f => f.State))
+                //        .MinimumDocumentCount(1)
+                //        .Size(500) // Assuming current market size is less than 500
+                //        .Order(o => o
+                //            .KeyAscending()
+                //            .CountDescending()))));
 
-            var mappedResponse = response.Aggregations.MultiTerms("markets")
-                    .Buckets.Select<MultiTermsBucket<string>, MarketDetailsModel>(s => new MarketDetailsModel 
-                    { 
-                        Name = s.Key.ToArray()[0], 
-                        State = s.Key.ToArray()[1]
-                    });
+                var response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
+                    .Index(ElasticsearchConstants.PropertyIndex)
+                    .Size(1000)
+                    .Sort(o => o.Ascending(a => a.Market).Ascending(a => a.State))
+                    .Aggregations(a => a
+                        .Composite("markets", c => c
+                            .Sources(s => s
+                                .Terms("market", t => t.Field(f => f.Market))
+                                .Terms("state", t => t.Field(f => f.State)))))
+                    );
 
-            return mappedResponse;
+                //var mappedResponse = response.Aggregations
+                //        .Buckets.Select<MultiTermsBucket<string>, MarketDetailsModel>(s => new MarketDetailsModel
+                //        {
+                //            Name = s.Key.ToArray()[0],
+                //            State = s.Key.ToArray()[1]
+                //        });
+
+                var markets = response.Aggregations.Composite("markets").Buckets;
+
+                var mappedResponse = markets.Select(s => new MarketDetailsModel
+                {
+                    Name = s.Key.Values.ToArray()[0].ToString(),
+                    State = s.Key.Values.ToArray()[1].ToString()
+                });
+
+                return mappedResponse;
+            }
+            catch (Exception ex)
+            {
+                // log error
+                Console.WriteLine(ex);
+                return null;
+            }
         }
     }
 }
