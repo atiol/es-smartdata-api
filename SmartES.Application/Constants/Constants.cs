@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SmartES.Application.Constants
+﻿namespace SmartES.Application.Constants
 {
     public static class ElasticsearchConstants
     {

@@ -41,7 +41,6 @@ namespace SmartES.Application.Helpers
                     Console.WriteLine($"[DataUploader] Failed to delete \"{ElasticsearchConstants.PropertyIndex}\" index!");
                     Console.WriteLine(deleteResult.OriginalException.StackTrace);
                 }
-                //return;
             }
             else
             {
@@ -62,7 +61,7 @@ namespace SmartES.Application.Helpers
             }
             else
             {
-                Console.WriteLine($"[DataUploader] Error encountered while trying to create index [{ElasticsearchConstants.PropertyIndex}]!");
+                Console.WriteLine($"[DataUploader] Error encountered while trying to create index \"{ElasticsearchConstants.PropertyIndex}\"!");
                 Console.WriteLine("\n" + createResult.OriginalException.ToString() + "\n");
                 return;
             }

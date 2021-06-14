@@ -92,7 +92,7 @@ namespace SmartES.Application.Helpers
                 using StreamReader fileData = File.OpenText(mgmtDataPath);
                 using JsonTextReader reader = new JsonTextReader(fileData);
 
-                Console.WriteLine("[DataUploader] Reading file data...");
+                Console.WriteLine("[DataUploader] Reading file data...\n");
 
                 while (reader.Read())
                 {
@@ -107,7 +107,7 @@ namespace SmartES.Application.Helpers
 
                         if (counter == 500)
                         {
-                            Console.Write("[DataUploader] #=>");
+                            Console.Write("# ");
                             counter = 0;
                         }
                     }
@@ -117,11 +117,12 @@ namespace SmartES.Application.Helpers
 
                 if (bulkResult.IsValid)
                 {
-                    Console.WriteLine($"\n[DataUploader] Successfully indexed {dataIndex} files!!!\n");
+                    Console.WriteLine($"\n\n[DataUploader] Successfully indexed {dataIndex} files!!!\n");
                 }
                 else
                 {
                     Console.WriteLine($"[DataUploader] Error encountered while bulk indexing data!!!\n");
+                    Console.WriteLine($"\n{bulkResult.DebugInformation}\n");
                 }
             }
             catch (Exception ex)
