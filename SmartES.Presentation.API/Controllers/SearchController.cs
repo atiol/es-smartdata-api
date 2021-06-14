@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using SmartES.Application.Contracts;
+using SmartES.Application.Models.RequestModels;
 using System.Threading.Tasks;
 
 namespace SmartES.Presentation.API.Controllers
@@ -16,23 +16,30 @@ namespace SmartES.Presentation.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Search([FromQuery] string query, int pageIndex = 1, int pageSize = 45)
+        public async Task<IActionResult> Search([FromQuery] RequestParamsModel model)
         {
-            var results = await _searchService.Search(query, pageIndex, pageSize);
+            var results = await _searchService.Search(model);
             return Ok(results);
         }
 
         [HttpGet("mgmts")]
-        public async Task<IActionResult> GetMgmts([FromQuery] string query)
+        public async Task<IActionResult> GetMgmts(int pageIndex, int pageSize)
         {
-            var result = await _searchService.GetMgmt(query);
+            var result = await _searchService.GetMgmt(pageIndex, pageSize);
             return Ok(result);
         }
 
         [HttpGet("properties")]
-        public async Task<IActionResult> Properties([FromQuery] string query)
+        public async Task<IActionResult> Properties([FromQuery] string query, string market)
         {
-            var result = await _searchService.GetMgmt(query);
+            var result = await _searchService.GetProperties(query, market);
+            return Ok(result);
+        }
+
+        [HttpGet("markets")]
+        public async Task<IActionResult> GetMarkets()
+        {
+            var result = await _searchService.GetMarkets();
             return Ok(result);
         }
     }

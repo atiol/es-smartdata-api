@@ -1,8 +1,12 @@
 ﻿using Nest;
+using SmartES.Application.Constants;
 using SmartES.Application.Contracts;
 using SmartES.Application.Models.BaseModel;
+using SmartES.Application.Models.Markets;
 using SmartES.Application.Models.Mgmt;
 using SmartES.Application.Models.Property;
+using SmartES.Application.Models.RequestModels;
+using SmartES.Application.Models.ResponseModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,63 +23,151 @@ namespace SmartES.Application.Services
             _esClient = esClient;
         }
 
-        public async Task<ISearchResponse<object>> Search(string searchPhrase, int pageIndex, int pageSize)
+        public async Task<PagedResponseModel<object>> Search(RequestParamsModel model)
         {
-            if (pageSize > 45)
+            if (model.PageSize > ElasticsearchConstants.MaximumPageSize)
             {
-                pageSize = 45;
+                model.PageSize = ElasticsearchConstants.MaximumPageSize;
             }
 
-            var response = await _esClient.SearchAsync<object>(s => s
-                .Index(Indices.Index("mgmt"))
-                .Query(q => (q
-                    .MatchPhrase(m => m
-                        .Field(Infer.Field<PropertySearchDocument>(pf => pf.SearchTexts))
-                        .Query(searchPhrase))) 
-                        || 
+            ISearchResponse<object> response;
+
+            if (!string.IsNullOrEmpty(model.Market))
+            {
+                response = await _esClient.SearchAsync<object>(s => s
+                .AllIndices()
+                .Index(new[] { ElasticsearchConstants.PropertyIndex, ElasticsearchConstants.MgmtIndex })
+                .Query(q => q
+                    .Bool(b => b
+                        .Must(mu => mu
+                            .Match(m => m
+                                .Field(Infer.Field<PropertyDetailsModel>(ff => ff.Market))
+                                .Query(model.Market)))) 
+                         &&
+                    
+                    q.MultiMatch(m => m
+                        .Type(TextQueryType.PhrasePrefix)
+                        .Fields(f => f
+                            .Field(Infer.Field<PropertyDetailsModel>(pf => pf.Name, 1.3))
+                            .Field(Infer.Field<PropertyDetailsModel>(pf => pf.FormerName, 1.3)))
+                        .Query(model.Query)) &&
+                        q.Term("_index", ElasticsearchConstants.PropertyIndex)
+
+                        ||
+
                     (q.MatchPhrase(m => m
-                        .Field(Infer.Field<MgmtSearchDocument>(pf => pf.SearchTexts))
-                        .Query(searchPhrase))))
-                .From(pageIndex - 1 * pageSize)
-                .Take(pageSize));
+                            .Field(Infer.Field<MgmtDetailsModel>(pf => pf.Name, 1.2))
+                        .Query(model.Query)) &&
+                        q.Term("_index", ElasticsearchConstants.MgmtIndex)) && 
+                    q.Bool(b => b
+                        .Must(mu => mu
+                            .Match(m => m
+                                .Field(Infer.Field<MgmtDetailsModel>(f => f.Market))
+                                .Query(model.Market)))))
+                .From((model.PageIndex - 1) * model.PageSize)
+                .Take(model.PageSize));
+            }
+            else
+            {
+                response = await _esClient.SearchAsync<object>(s => s
+                    .AllIndices()
+                    .Index(new[] { ElasticsearchConstants.PropertyIndex, ElasticsearchConstants.MgmtIndex })
+                    .Query(q => q
+                        .MultiMatch(mm => mm
+                            .Type(TextQueryType.PhrasePrefix)
+                                .Fields(f => f
+                                    .Field(Infer.Field<PropertyDetailsModel>(ff => ff.Name))
+                                    .Field(Infer.Field<PropertyDetailsModel>(ff => ff.FormerName)))
+                                .Query(model.Query)) 
+                        
+                        ||
+                            
+                            q.MatchPhrasePrefix(pp => pp
+                                .Field(Infer.Field<MgmtDetailsModel>(f => f.Name))
+                                .Query(model.Query)
+                                .Slop(1)
+                                .MaxExpansions(2)))
+                    );
+            }
 
-            return response;
+            
+
+            return new PagedResponseModel<object>
+            {
+                TotalItems = (int) response.Total,
+                PageIndex = model.PageIndex,
+                PageSize = model.PageSize,
+                Items = response.Documents
+            };
         }
 
-        public async Task<IEnumerable<PropertyDetailsModel>> GetProperties(string searchPhrase)
+        public async Task<IEnumerable<PropertyDetailsModel>> GetProperties(string searchPhrase, string market)
         {
-            var response = await _esClient.SearchAsync<PropertySearchDocument>(s => s
-                .Index("property")
-                .Query(q => q
-                    .MultiMatch(mm => mm
-                        .Query(searchPhrase)
-                        .Type(TextQueryType.BoolPrefix)
-                        .Fields(ff => ff
-                            .Field(f => f.SearchTexts)
-                            .Field("searchTexts._2gram")
-                            .Field("searchTexts._3gram"))))
-            );
+            ISearchResponse<PropertyDetailsModel> response;
 
-            return response.Documents.Select(p => p.Data);
+            if (!string.IsNullOrEmpty(searchPhrase))
+            {
+                response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
+                    .Index(ElasticsearchConstants.PropertyIndex)
+                    .Query(q => q
+                        .MultiMatch(mm => mm
+                            .Query(searchPhrase)
+                            .Type(TextQueryType.PhrasePrefix)
+                            .Fields(f => f
+                                .Field(ff => ff.Name)
+                                .Field(ff => ff.FormerName))
+                            .Operator(Operator.Or)) && 
+                            (!string.IsNullOrEmpty(market) ? 
+                                q.Bool(b => b.Filter(m => m.Term(t => t.Market, market))) : 
+                                q.Fuzzy(f => f.Fuzziness(Fuzziness.EditDistance(1)))))
+                    );
+            }
+            else
+            {
+                response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
+                    .Index(ElasticsearchConstants.PropertyIndex)
+                    .Query(q => q.Bool(b => b.Filter(m => m.Term(t => t.Market, market))))
+                    .From(0)
+                    .Take(45));
+            }
+
+            return response.Documents;
         }
 
-        public async Task<IEnumerable<MgmtDetailsModel>> GetMgmt(string searchPhrase)
+        public async Task<IEnumerable<MgmtDetailsModel>> GetMgmt(int pageIndex, int pageSize)
         {
-            var response = await _esClient.SearchAsync<MgmtSearchDocument>(s => s
-                .Index("mgmt")
-                .Query(q => q
-                    .MultiMatch(mm => mm
-                        .Query(searchPhrase)
-                        .Type(TextQueryType.BoolPrefix)
-                        .Fields(ff => ff
-                            .Field(f => f.SearchTexts)
-                            .Field("searchTexts._2gram")
-                            .Field("searchTexts._3gram"))))
-                
-                .Take(10)
-            );
+            var response = await _esClient.SearchAsync<MgmtDetailsModel>(s => s
+                    .Index(ElasticsearchConstants.MgmtIndex)
+                    .Query(q => q.MatchAll())
+                    .From(pageIndex)
+                    .Take(pageSize));
 
-            return response.Documents.Select(c => c.Data);
+            return response.Documents;
+        }
+
+        public async Task<IEnumerable<MarketDetailsModel>> GetMarkets()
+        {
+            var response = await _esClient.SearchAsync<PropertyDetailsModel>(s => s
+                .Index(ElasticsearchConstants.PropertyIndex)
+                .Aggregations(a => a
+                    .MultiTerms("markets", m => m
+                        .CollectMode(TermsAggregationCollectMode.BreadthFirst)
+                        .Terms(t => t
+                            .Field(f => f.Market), t => t.Field(f => f.State))
+                        .MinimumDocumentCount(1)
+                        .Size(500)
+                        .Order(o => o
+                            .KeyAscending()
+                            .CountDescending()))));
+
+            var mappedResponse = response.Aggregations.MultiTerms("markets")
+                    .Buckets.Select<MultiTermsBucket<string>, MarketDetailsModel>(s => new MarketDetailsModel 
+                    { 
+                        Name = s.Key.ToArray()[0], 
+                        State = s.Key.ToArray()[1]
+                    });
+
+            return mappedResponse;
         }
     }
 }
